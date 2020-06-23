@@ -1,0 +1,28 @@
+pipeline {
+  agent {
+    dockerfile {
+     filename 'Dockerfile'
+     reuseNode false
+    }
+  }
+stages {
+   stage('TF Default APPLY') {
+      steps {
+	      withCredentials([[
+	        $class: 'AmazonWebServicesCredentialsBinding',
+	        credentialsId: 'newkeyjenkins',
+	        accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+	        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+        ]]) {
+	  dir ("${env.WORKSPACE}/project_cmdb_wb") {
+	    sh 'terraform init -var accessKey=${AWS_ACCESS_KEY_ID} -var secretKey=${AWS_SECRET_ACCESS_KEY} -input=false'
+            sh 'terraform destroy -force -var accessKey=${AWS_ACCESS_KEY_ID} -var secretKey=${AWS_SECRET_ACCESS_KEY} --target aws_instance.NSRA_CMDB_WEB'
+            sh 'terraform destroy -force -var accessKey=${AWS_ACCESS_KEY_ID} -var secretKey=${AWS_SECRET_ACCESS_KEY} --target aws_eip.NSRA_CMDB_Ec2_EIP'
+          }
+        }
+
+       }
+     }
+     
+   }
+}
